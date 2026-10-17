@@ -58,6 +58,7 @@ const SUPABASE_KEY = 'sb_secret_6SFwo949SpFwsfZxHR3hlg_SfLEXGMT';
 async function getData() {
     try {
         const res = await fetch(SUPABASE_URL, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } });
+        if(!res.ok) { console.error("Fetch failed", await res.text()); return []; }
         return await res.json();
     } catch(e) {
         console.error("Error fetching data:", e); return [];
@@ -65,12 +66,25 @@ async function getData() {
 }
 async function saveResponse(responseObj) {
     try {
-        await fetch(SUPABASE_URL, {
+        const res = await fetch(SUPABASE_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` },
+            headers: { 
+                'Content-Type': 'application/json', 
+                'apikey': SUPABASE_KEY, 
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Prefer': 'return=minimal' 
+            },
             body: JSON.stringify(responseObj)
         });
-    } catch(e) { console.error("Error saving data:", e); }
+        if(!res.ok) {
+            const errText = await res.text();
+            alert("Database Error: " + errText + "\n\nMake sure you created the 'survey_responses' table and disabled RLS in Supabase.");
+            throw new Error(errText);
+        }
+    } catch(e) { 
+        console.error("Error saving data:", e); 
+        throw e;
+    }
 }
 async function clearAllResponses() {
     try {
@@ -94,8 +108,10 @@ form.addEventListener('submit', async (e) => {
         const group=missing[0][0];document.querySelector(`[data-group="${group}"]`).scrollIntoView({behavior:'smooth',block:'center'});
         return;
     }
+    
+    // Removed specific 'id' so Supabase can auto-generate it.
     const response={
-        id:Date.now(),date:new Date().toISOString(),...answers,
+        date:new Date().toISOString(),...answers,
         age:document.getElementById('age').value,role:document.getElementById('role').value,
         idea:document.getElementById('idea').value.trim()
     };
@@ -104,9 +120,15 @@ form.addEventListener('submit', async (e) => {
     submitBtn.innerHTML = 'Saving...';
     submitBtn.disabled = true;
 
-    await saveResponse(response);
-    markDone();
+    try {
+        await saveResponse(response);
+    } catch(err) {
+        submitBtn.innerHTML = 'Submit my answers <span>↗</span>';
+        submitBtn.disabled = false;
+        return; // Stop the redirect if it didn't save
+    }
     
+    markDone();
     if(isAdmin()) renderDashboard();
     
     form.reset();
