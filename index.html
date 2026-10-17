@@ -52,10 +52,8 @@
 <div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle"><form class="login-card" id="loginForm" autocomplete="off"><div class="eyebrow">Admin access</div><h3 id="loginTitle">Survey results</h3><p>Enter the admin ID and password to view responses.</p><div class="row"><label for="adminId">ID</label><input class="field" id="adminId" name="adminId" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" required></div><div class="row"><label for="adminPw">Password</label><div class="pw-wrap"><input class="field" id="adminPw" name="adminPw" type="password" autocomplete="off" required><button type="button" class="pw-toggle" id="pwToggle">Show</button></div></div><div class="login-error" id="loginError" role="alert"></div><div class="login-actions"><button type="button" class="btn" id="loginCancel">Cancel</button><button type="submit" class="btn primary" id="loginSubmit">Unlock</button></div></form></div><div class="toast" id="toast">Response saved</div>
 <script>
 // --- CLOUD DATABASE CONFIGURATION ---
-// You will need a backend to sync data across devices. The default setup below 
-// uses standard REST which integrates perfectly with Supabase. Just drop in your Project URL and Anon Key.
-const SUPABASE_URL = https://lofsslmpiqvuzjlmndvt.supabase.co;
-const SUPABASE_KEY = sb_secret_6SFwo949SpFwsfZxHR3hlg_SfLEXGMT;
+const SUPABASE_URL = 'https://lofsslmpiqvuzjlmndvt.supabase.co/rest/v1/survey_responses';
+const SUPABASE_KEY = 'sb_secret_6SFwo949SpFwsfZxHR3hlg_SfLEXGMT';
 
 async function getData() {
     try {
@@ -76,8 +74,6 @@ async function saveResponse(responseObj) {
 }
 async function clearAllResponses() {
     try {
-        // Warning: Backend deletion logic varies. In Supabase, you usually target rows directly or call an RPC.
-        // This is a generic DELETE template.
         await fetch(SUPABASE_URL, { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }});
     } catch(e) {}
 }
@@ -123,7 +119,7 @@ form.addEventListener('submit', async (e) => {
     toast.classList.add('show');
     
     setTimeout(() => {
-        window.location.href = 'https://www.instagram.com/beyondcampus_iimraipur?rpxt=MWs3MjV3cGFwcHNiNQ%3D%3D';
+        window.location.replace('https://www.instagram.com/beyondcampus_iimraipur?rpxt=MWs3MjV3cGFwcHNiNQ%3D%3D');
     }, 1200);
 });
 
@@ -196,6 +192,8 @@ function lockForm(){form.hidden=true;document.getElementById('doneCard').hidden=
 document.getElementById('resetBtn').addEventListener('click',()=>{if(!isAdmin())return;unmarkDone();showToast('Survey reopened on this device')});
 if(hasDone())lockForm();
 
+/* Core WebGL/Scroll Layout Loop */
+let measure, req;
 (()=>{const root=document.documentElement,world=document.querySelector('.world'),grid=document.querySelector('.grid'),rm=matchMedia('(prefers-reduced-motion:reduce)').matches;if(rm)root.classList.add('rm');
 const hx=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
 const P=[['#0a0e2a','#3b2f86','#9ad7ff','#7f8cff',.2],['#01020a','#0b1038','#7a7dff','#5560ff',1],['#1b1030','#e0663c','#ffc38a','#ff9d5c',0],['#030504','#10201a','#4dffa8','#1f6b4b',0],['#5fb8e6','#fff0cf','#ffffff','#ffffff',0],['#0a0e2a','#3b2f86','#9ad7ff','#7f8cff',.2]].map(([a,b,g,l,s])=>[hx(a),hx(b),hx(g),hx(l),s]);
@@ -203,7 +201,7 @@ const names=['Campus gate','Space walk','Plank walk','Horror','Relaxing','More t
 const gates=[...document.querySelectorAll('[data-gate]')],zones=[...document.querySelectorAll('.zone')].map(el=>({el,card:el.querySelector('.genre'),s:-1,o:-1})),steps=document.getElementById('steps'),where=document.getElementById('whereText'),whereBox=where.parentNode,hero=document.getElementById('heroIn');
 const mix=(x,y,t)=>x.map((v,i)=>Math.round(v+(y[i]-v)*t)),set=(k,v)=>world.style.setProperty(k,v);
 let tick=false,vh=innerHeight,vw=innerWidth,G=[],lastN=-1,lastKey='',lastName='',lastHo=-1;
-function measure(){const y=scrollY;G=gates.map(g=>{const r=g.getBoundingClientRect();return y+r.top+r.height/2});zones.forEach(z=>{const r=z.el.getBoundingClientRect();z.top=y+r.top;z.h=r.height;z.sh=z.el.firstElementChild.offsetHeight});vh=zones[0].sh||innerHeight;vw=innerWidth}
+measure=()=>{const y=scrollY;G=gates.map(g=>{const r=g.getBoundingClientRect();return y+r.top+r.height/2});zones.forEach(z=>{const r=z.el.getBoundingClientRect();z.top=y+r.top;z.h=r.height;z.sh=z.el.firstElementChild.offsetHeight});vh=zones[0].sh||innerHeight;vw=innerWidth};
 function frame(){tick=false;const y=scrollY,mid=y+vh/2;
 grid.style.transform='rotateX(72deg) translateY('+((y*.55)%90).toFixed(1)+'px)';
 const n=Math.floor(y/32);if(n!==lastN){lastN=n;steps.textContent=String(n).padStart(4,'0')}
@@ -216,8 +214,22 @@ const ho=Math.max(0,1-y/(vh*.55));if(ho>0||lastHo>0){lastHo=ho;hero.style.opacit
 for(const z of zones){const p=Math.min(1,Math.max(0,(y-z.top)/(z.h-z.sh)));let s,o;
 if(p<.25){const k=p/.25;s=.55+.45*k;o=k}else if(p<.7){s=1;o=1}else{const k=(p-.7)/.3;s=1+k*.9;o=1-k}
 s=+s.toFixed(3);o=+o.toFixed(3);if(s!==z.s||o!==z.o){z.s=s;z.o=o;z.card.style.transform='scale('+s+')';z.card.style.opacity=o;z.card.style.pointerEvents=o>.6?'auto':'none'}}}
-const req=()=>{if(!tick){tick=true;requestAnimationFrame(frame)}};
+req=()=>{if(!tick){tick=true;requestAnimationFrame(frame)}};
 addEventListener('scroll',req,{passive:true});
 addEventListener('resize',()=>{if(innerWidth!==vw){measure();req()}});addEventListener('load',()=>{measure();req()});if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{measure();req()});
 measure();frame()})();
+
+/* Bfcache glitch prevention */
+window.addEventListener('pageshow', (e) => {
+    if(e.persisted) {
+        if(typeof measure === 'function') measure();
+        if(typeof req === 'function') req();
+        
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = 'Submit my answers <span>↗</span>';
+            submitBtn.disabled = false;
+        }
+    }
+});
 </script></body></html>
